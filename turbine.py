@@ -14,7 +14,8 @@ class OpenFAST(object):
         """
         self.cwd = dpath
         random.seed(start_seed)
-        self.seeds = [ random.randint(-2147483648,2147483647)
+        # integer range from turbsim manual
+        self.seeds = [ random.randint(-2147483648, 2147483647)
                        for _ in range(Nruns) ]
         self.verbose = verbose
 
@@ -25,8 +26,8 @@ class OpenFAST(object):
         for setkey,setval in inputs.items():
             if setkey in tmp_inputs.keys():
                 if self.verbose:
-                    print('  {:s} = {:g} (format: {:s})'.format(
-                            setkey,setval,tmp_inputs[setkey]))
+                    outstr = '  {:s} = {:'+tmp_inputs[setkey][-1]+'} (format: {:s})'
+                    print(outstr.format(setkey,setval,tmp_inputs[setkey]))
                 tmp_inputs[setkey] = setval
                 fields_to_set.remove(setkey)
             else:
