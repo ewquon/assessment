@@ -38,3 +38,13 @@ class OpenFAST(object):
         # at this point, the template inputs (tmp_inputs) are completely filled
         tmp.generate(inputfile,replace=tmp_inputs)
         return tmp
+
+    def setup_turbsim(self,inputs={}):
+        """Setup turbsim input files for all seeds"""
+        templatefile = os.path.join(self.cwd,'Wind','start.inp')
+        for iseed, seed in enumerate(self.seeds):
+            inputs['RandSeed1'] = seed
+            inputfile = os.path.join(self.cwd,'Wind','turbsim_{:02d}.inp'.format(iseed))
+            if self.verbose:
+                print('Generating',inputfile,'from',templatefile)
+            self._generate_input(inputfile,templatefile,inputs)
