@@ -84,14 +84,66 @@ class OpenFAST(object):
             raise RuntimeError('termination string found={}, return code={}'.format(okay,istat))
         return proc
 
+    def _setup_openfast(self,irun):
+        """Setup inputs for new openfast run, return input file to be
+        used when calling openfast
+        """
+        inflowfile = 'InflowWind_{:02d}.dat'.format(irun)
+        inflowpath = os.path.join(self.cwd, inflowfile)
+        if self.verbose:
+            print('Generating',inflowpath)
+        if self.inflow == 'turbsim':
+            # TurbSim synthetic turbulence with binary flowfield input
+            inflowtemplate = os.path.join(self.cwd, 'InflowWind_bts.dat')
+            tsinput = os.path.split(self.ts_inputfiles[irun])[1]
+            btsfile = os.path.splitext(tsinput)[0] + '.bts'
+            btspath = os.path.join(self.inflowdir, btsfile)
+            inputs = {
+                'BTSFilename': btspath
+            }
+            self._generate_input(inflowpath, inflowtemplate, inputs)
+        else:
+            raise RuntimeError('Unexpected inflow type: '+self.inflow)
+
+        fstfile = 'run{:02d}.fst'.format(irun)
+        fstpath = os.path.join(self.cwd, fstfile)
+        if self.verbose:
+            print('Generating',fstpath)
+        fsttemplate = os.path.join(self.cwd, 'start.fst')
+        inputs = {
+            'InflowFile': inflowfile
+        }
+        self._generate_input(fstpath, fsttemplate, inputs)
+
+        return fstfile
+
     def run(self,i):
         """Run specified simulation (inflow, openfast)"""
         # setup inflow, if needed
         if self.inflow == 'turbsim':
             self.run_turbsim(i)
         else:
+            assert self.inflow is None
             raise RuntimeError('Need to setup inflow')
         # run openfast
+        fstfile = self._setup_openfast(i)
+        logfile = 'log.' + os.path.splitext(fstfile)[0]
+        logpath = os.path.join(self.cwd, logfile)
+        if self.verbose:
+            print('{}$ openfast {} > {} &'.format(self.cwd,fstfile,logfile))
+        proc = subprocess.Popen(['openfast', fstfile],
+                                cwd=self.cwd,
+                                stdout=subprocess.PIPE)
+        with open(logpath,'wb') as f:
+            okay = False
+            for line in proc.stdout:
+                f.write(line)
+                if line.decode().strip() == 'OpenFAST terminated normally.':
+                    okay = True
+        istat = proc.poll() # get returncode
+        if (not okay) or (istat != 0):
+            raise RuntimeError('termination string found={}, return code={}'.format(okay,istat))
+        return proc
 
     def run_all(self):
         """Run all simulations after setup routines have been called"""
