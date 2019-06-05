@@ -6,7 +6,9 @@ import random
 import subprocess
 from multiprocessing import Pool
 
+import pandas as pd
 from datatools.codedrivers import InputTemplate
+from datatools.FAST.output import read
 
 class OpenFAST(object):
     """Manages OpenFAST aeroelastic simulation inputs and outputs"""
@@ -20,6 +22,7 @@ class OpenFAST(object):
         self.inflow = None
         self.Nruns = Nruns
         self.parallel = False
+        self.outputs = None
         # integer range from turbsim manual
         random.seed(start_seed)
         self.seeds = [ random.randint(-2147483648, 2147483647)
@@ -163,3 +166,13 @@ class OpenFAST(object):
             for irun in range(self.Nruns):
                 self.run(irun)
 
+    def read_outputs(self):
+        """Read all simulation outputs and return dataframe"""        
+        dflist = []
+        for irun in range(self.Nruns):
+            outfile = os.path.join(self.cwd, 'run{:02d}.out'.format(irun))
+            df = read(outfile).to_dataframe()
+            df['run'] = irun
+            dflist.append(df)
+        self.outputs =  pd.concat(dflist)
+        return self.outputs
