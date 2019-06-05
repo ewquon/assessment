@@ -3,6 +3,8 @@ Functions for assessing turbine performance and loads
 """
 import os
 import random
+import subprocess
+
 from datatools.codedrivers import InputTemplate
 
 class OpenFAST(object):
@@ -59,14 +61,24 @@ class OpenFAST(object):
 
     def run_turbsim(self,iseed):
         """Run turbsim with pre-generated turbulence seed"""
-        print('Placeholder: turbsim run',iseed)
+        inputfile = os.path.split(self.inputfiles[iseed])[1]
+        logfile = 'log.'+inputfile[:-4]
+        logpath = os.path.join(self.inflowdir,logfile)
+        if self.verbose:
+            print('{}$ turbsim {} > {} &'.format(self.inflowdir,inputfile,logfile))
+        with open(logpath,'w') as f:
+            proc = subprocess.run(['turbsim', inputfile],
+                                  cwd=self.inflowdir, stdout=f, check=True)
+        return proc
 
     def run(self,i):
-        """Run simulation (inflow, openfast)"""
+        """Run specified simulation (inflow, openfast)"""
+        # setup inflow, if needed
         if self.inflow == 'turbsim':
-            self.run_turbsim(irun)
+            self.run_turbsim(i)
         else:
             raise RuntimeError('Need to setup inflow')
+        # run openfast
 
     def run_all(self):
         """Run all simulations after setup routines have been called"""
