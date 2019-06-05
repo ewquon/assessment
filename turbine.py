@@ -4,6 +4,7 @@ Functions for assessing turbine performance and loads
 import os
 import random
 import subprocess
+from multiprocessing import Pool
 
 from datatools.codedrivers import InputTemplate
 
@@ -18,6 +19,7 @@ class OpenFAST(object):
         self.cwd = dpath
         self.inflow = None
         self.Nruns = Nruns
+        self.parallel = False
         # integer range from turbsim manual
         random.seed(start_seed)
         self.seeds = [ random.randint(-2147483648, 2147483647)
@@ -141,6 +143,8 @@ class OpenFAST(object):
                 f.write(line)
                 line = line.strip()
                 if self.verbose and line.startswith('Time:'):
+                    if self.parallel:
+                        line = '[{}] {}'.format(fstfile,line)
                     print(line)
                 if line == 'OpenFAST terminated normally.':
                     okay = True
@@ -149,8 +153,13 @@ class OpenFAST(object):
             raise RuntimeError('termination string found={}, return code={}'.format(okay,istat))
         return proc
 
-    def run_all(self):
+    def run_all(self,procs=1):
         """Run all simulations after setup routines have been called"""
-        for irun in range(self.Nruns):
-            self.run(irun)
+        self.parallel = (procs > 1)
+        if self.parallel:
+            with Pool(procs) as pool:
+                pool.map(self.run, range(self.Nruns))
+        else:
+            for irun in range(self.Nruns):
+                self.run(irun)
 
