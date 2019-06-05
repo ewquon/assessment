@@ -44,15 +44,18 @@ class OpenFAST(object):
         tmp.generate(inputfile,replace=tmp_inputs)
         return tmp
 
-    def setup_turbsim(self,inputs={},inflowdir='Wind',template='start.inp'):
+    def setup_turbsim(self,inputs={},
+                      inflowdir='Wind',
+                      template='start.inp',
+                      prefix='turbsim'):
         """Setup all turbsim input files for all seeds"""
-        self.inflowdir = os.path.join(self.cwd,inflowdir)
-        self.inputfiles = [
-            os.path.join(self.inflowdir,'turbsim_{:02d}.inp'.format(irun))
+        self.inflowdir = inflowdir
+        self.ts_inputfiles = [
+            os.path.join(self.cwd, self.inflowdir, '{}_{:02d}.inp'.format(prefix,irun))
             for irun in range(self.Nruns)
         ]
-        templatefile = os.path.join(self.inflowdir,template)
-        for inputfile,seed in zip(self.inputfiles,self.seeds):
+        templatefile = os.path.join(self.cwd, self.inflowdir, template)
+        for inputfile,seed in zip(self.ts_inputfiles,self.seeds):
             inputs['RandSeed1'] = seed
             if self.verbose:
                 print('Generating',inputfile,'from',templatefile)
@@ -61,13 +64,14 @@ class OpenFAST(object):
 
     def run_turbsim(self,iseed):
         """Run turbsim with pre-generated turbulence seed"""
-        inputfile = os.path.split(self.inputfiles[iseed])[1]
+        inputfile = os.path.split(self.ts_inputfiles[iseed])[1]
         logfile = 'log.' + os.path.splitext(inputfile)[0]
-        logpath = os.path.join(self.inflowdir,logfile)
+        logpath = os.path.join(self.cwd, self.inflowdir, logfile)
         if self.verbose:
-            print('{}$ turbsim {} > {} &'.format(self.inflowdir,inputfile,logfile))
+            print('{}$ turbsim {} > {} &'.format(os.path.join(self.cwd,self.inflowdir),
+                                                 inputfile,logfile))
         proc = subprocess.Popen(['turbsim', inputfile],
-                                cwd=self.inflowdir,
+                                cwd=os.path.join(self.cwd, self.inflowdir),
                                 stdout=subprocess.PIPE)
         with open(logpath,'wb') as f:
             okay = False
