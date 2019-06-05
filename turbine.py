@@ -12,12 +12,14 @@ class OpenFAST(object):
         """Set up simulation from `dpath`, with a sweep of `Nruns`
         corresponding to unique TurbSim inflow simulations
         """
+        self.verbose = verbose
         self.cwd = dpath
-        random.seed(start_seed)
+        self.inflow = None
+        self.Nruns = Nruns
         # integer range from turbsim manual
+        random.seed(start_seed)
         self.seeds = [ random.randint(-2147483648, 2147483647)
                        for _ in range(Nruns) ]
-        self.verbose = verbose
 
     def _generate_input(self,inputfile,templatefile,inputs={}):
         tmp = InputTemplate(templatefile)
@@ -49,3 +51,21 @@ class OpenFAST(object):
             if self.verbose:
                 print('Generating',inputfile,'from',templatefile)
             self._generate_input(inputfile,templatefile,inputs)
+        self.inflow = 'turbsim'
+
+    def run_turbsim(self,iseed):
+        """Run turbsim with pre-generated turbulence seed"""
+        print('Placeholder: turbsim run',iseed)
+
+    def run(self,i):
+        """Run simulation (inflow, openfast)"""
+        if self.inflow == 'turbsim':
+            self.run_turbsim(irun)
+        else:
+            raise RuntimeError('Need to setup inflow')
+
+    def run_all(self):
+        """Run all simulations after setup routines have been called"""
+        for irun in range(self.Nruns):
+            self.run(irun)
+
