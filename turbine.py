@@ -36,7 +36,7 @@ class OpenFAST(object):
                 fields_to_set.remove(setkey)
             else:
                 raise KeyError("Ignored input for '" + setkey + 
-                               "' (not in template file)")
+                               "' (not in " + templatefile + " file)")
         if len(fields_to_set) > 0:
             raise KeyError('The following substitution fields were not set: "'
                            +'", "'.join(fields_to_set)+'"')
