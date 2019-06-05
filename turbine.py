@@ -62,13 +62,22 @@ class OpenFAST(object):
     def run_turbsim(self,iseed):
         """Run turbsim with pre-generated turbulence seed"""
         inputfile = os.path.split(self.inputfiles[iseed])[1]
-        logfile = 'log.'+inputfile[:-4]
+        logfile = 'log.' + os.path.splitext(inputfile)[0]
         logpath = os.path.join(self.inflowdir,logfile)
         if self.verbose:
             print('{}$ turbsim {} > {} &'.format(self.inflowdir,inputfile,logfile))
-        with open(logpath,'w') as f:
-            proc = subprocess.run(['turbsim', inputfile],
-                                  cwd=self.inflowdir, stdout=f, check=True)
+        proc = subprocess.Popen(['turbsim', inputfile],
+                                cwd=self.inflowdir,
+                                stdout=subprocess.PIPE)
+        with open(logpath,'wb') as f:
+            okay = False
+            for line in proc.stdout:
+                f.write(line)
+                if line.decode().strip() == 'TurbSim terminated normally.':
+                    okay = True
+        istat = proc.poll() # get returncode
+        if (not okay) or (istat != 0):
+            raise RuntimeError('termination string found={}, return code={}'.format(okay,istat))
         return proc
 
     def run(self,i):
