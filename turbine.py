@@ -72,12 +72,12 @@ class OpenFAST(object):
                                                  inputfile,logfile))
         proc = subprocess.Popen(['turbsim', inputfile],
                                 cwd=os.path.join(self.cwd, self.inflowdir),
-                                stdout=subprocess.PIPE)
-        with open(logpath,'wb') as f:
-            okay = False
+                                stdout=subprocess.PIPE, text=True)
+        okay = False
+        with open(logpath,'w') as f:
             for line in proc.stdout:
                 f.write(line)
-                if line.decode().strip() == 'TurbSim terminated normally.':
+                if line.strip() == 'TurbSim terminated normally.':
                     okay = True
         istat = proc.poll() # get returncode
         if (not okay) or (istat != 0):
@@ -133,12 +133,16 @@ class OpenFAST(object):
             print('{}$ openfast {} > {} &'.format(self.cwd,fstfile,logfile))
         proc = subprocess.Popen(['openfast', fstfile],
                                 cwd=self.cwd,
-                                stdout=subprocess.PIPE)
-        with open(logpath,'wb') as f:
-            okay = False
+                                stdout=subprocess.PIPE, text=True)
+        okay = False
+        with open(logpath,'w') as f:
             for line in proc.stdout:
+                #print(line.rstrip()) #DEBUG
                 f.write(line)
-                if line.decode().strip() == 'OpenFAST terminated normally.':
+                line = line.strip()
+                if self.verbose and line.startswith('Time:'):
+                    print(line)
+                if line == 'OpenFAST terminated normally.':
                     okay = True
         istat = proc.poll() # get returncode
         if (not okay) or (istat != 0):
