@@ -154,7 +154,6 @@ class OpenFAST(object):
         istat = proc.poll() # get returncode
         if (not okay) or (istat != 0):
             raise RuntimeError('termination string found={}, return code={}'.format(okay,istat))
-        return proc
 
     def run_all(self,procs=1):
         """Run all simulations after setup routines have been called"""
