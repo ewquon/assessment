@@ -12,4 +12,16 @@ __pycache__
 figures/
 data/
 *.csv
+*.png
+*.pdf
 
+# LaTeX/beamer files
+*.aux
+*.log
+*.bbl
+*.blg
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
